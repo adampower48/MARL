@@ -1,7 +1,12 @@
-from pvp_game import *
-from misc import *
-import time, sys, os, re, json
+import json
+import os
+import re
+import sys
+import time
 from collections import Counter
+
+from misc import *
+from pvp_game import *
 
 # Adjust the pvp game
 # each team starts in a corner near a stationary boss surrounded by walls
@@ -26,6 +31,7 @@ with_softmax = True
 print_visuals = True
 print_preds = False
 
+
 def print_all_preds(all_preds):
     msg = ""
     for index, pred in enumerate(all_preds[:preds_len]):
@@ -38,11 +44,11 @@ def print_all_preds(all_preds):
         if index in did_bad:
             rew = " " + red + "-1" + end
         if h > 9:
-            hp = cya + "%02d"%h + end
+            hp = cya + "%02d" % h + end
         elif h > 4:
-            hp = pur + "%02d"%h + end
+            hp = pur + "%02d" % h + end
         else:
-            hp = red + "%02d"%h + end
+            hp = red + "%02d" % h + end
         if h > 0:
             if index not in stochastic:
                 if s == 0:
@@ -60,8 +66,9 @@ def print_all_preds(all_preds):
                 plist[index].popleft()
         lpred = pretty_vecs(last_pred[index]) + " "
         ppred = pretty_preds(plist[index]) + " "
-        msg += first + "("+"%02d"%index+"):" + ppred + lpred + hp + rew + "\n" 
+        msg += first + "(" + "%02d" % index + "):" + ppred + lpred + hp + rew + "\n"
     print(msg)
+
 
 dirname = model_type + "_pvp_game_save"
 
@@ -77,7 +84,7 @@ else:
             model_num = m.group(1)
             trained_models.append(int(model_num))
 
-#random.seed(1)
+# random.seed(1)
 flatten_state, prev_states = get_state_params(model_type)
 gs = game_space(game_space_width, game_space_height, num_agents, walls, bonuses,
                 visible=visible, prev_states=prev_states,
@@ -159,7 +166,7 @@ while True:
     msg = "Model: " + model_type
     msg += " Iter: " + str(iteration)
     msg += " Epis: " + str(episode)
-    msg += " Epsi: " + "%.4f"%epsilon
+    msg += " Epsi: " + "%.4f" % epsilon
     msg += " Stoc: " + str(len(stochastic))
     msg += "\nTeam 1 size: " + str(team1_living)
     msg += " HP: " + str(team1_hp)
@@ -169,10 +176,10 @@ while True:
     msg += " Rewards: " + str(team_rewards[1])
     msg += "\nCurrent iter: " + str(current_iterations)
     msg += " Last iter: " + str(last_iterations)
-    msg += " Last winner: " + str(last_winner+1)
+    msg += " Last winner: " + str(last_winner + 1)
     msg += "\nIter rewards: " + str(episode_rewards)
     msg += " Last: " + str(last_rewards)
-    msg += " Mean: " + "%.2f"%mean_rewards
+    msg += " Mean: " + "%.2f" % mean_rewards
 
     alive = []
     all_preds = []
@@ -199,10 +206,10 @@ while True:
         all_preds[index] = pred
         last_pred[index] = pred
         if index in stochastic:
-            move = random.randint(0, gs.num_actions-1)
+            move = random.randint(0, gs.num_actions - 1)
         else:
             move = np.argmax(pred)
-        reward  = gs.move_agent(index, move)
+        reward = gs.move_agent(index, move)
         state_t1 = get_state(gs, index, model_type)
         states_t1.append(state_t1)
         if reward == 1:
@@ -229,12 +236,12 @@ while True:
             print_all_preds(all_preds)
         time.sleep(0.05)
     else:
-        echunk = int(episode_limit*0.05)
+        echunk = int(episode_limit * 0.05)
         if current_iterations % echunk == 0:
-            nchunk = int(current_iterations/echunk)
+            nchunk = int(current_iterations / echunk)
             sys.stdout.write("\r")
             sys.stdout.flush()
-            sys.stdout.write("#"*nchunk)
+            sys.stdout.write("#" * nchunk)
             sys.stdout.flush()
 
     if iteration > 0 and iteration % update_iter == 0:
@@ -247,7 +254,7 @@ while True:
     for n, a in enumerate(alive):
         models[a].train()
 
-    epsilon = max(min_epsilon, 1 - (total_rewards*epsilon_degrade))
+    epsilon = max(min_epsilon, 1 - (total_rewards * epsilon_degrade))
 
     if done == 1:
         sys.exit(0)
@@ -258,7 +265,7 @@ while True:
             for n in range(gs.num_agents):
                 sys.stdout.write("\r")
                 sys.stdout.flush()
-                sys.stdout.write("Training model: " + "%03d"%n)
+                sys.stdout.write("Training model: " + "%03d" % n)
                 sys.stdout.flush()
                 models[n].update_policy()
         ns = int(epsilon * gs.num_agents)

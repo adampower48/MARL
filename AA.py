@@ -1,21 +1,23 @@
-import random, json, os
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
+import os
 from collections import deque
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
 # Training params
-init_w=3e-3
+init_w = 3e-3
+
 
 class SelfAttention(nn.Module):
     def __init__(self, k, heads=4):
         super().__init__()
         self.k, self.heads = k, heads
 
-        self.tokeys    = nn.Linear(k, k * heads, bias=False)
+        self.tokeys = nn.Linear(k, k * heads, bias=False)
         self.toqueries = nn.Linear(k, k * heads, bias=False)
-        self.tovalues  = nn.Linear(k, k * heads, bias=False)
+        self.tovalues = nn.Linear(k, k * heads, bias=False)
 
         self.unifyheads = nn.Linear(heads * k, k)
 
@@ -24,15 +26,15 @@ class SelfAttention(nn.Module):
         h = self.heads
 
         queries = self.toqueries(x).view(b, t, h, k)
-        keys    = self.tokeys(x)   .view(b, t, h, k)
-        values  = self.tovalues(x) .view(b, t, h, k)
+        keys = self.tokeys(x).view(b, t, h, k)
+        values = self.tovalues(x).view(b, t, h, k)
 
         keys = keys.transpose(1, 2).contiguous().view(b * h, t, k)
         queries = queries.transpose(1, 2).contiguous().view(b * h, t, k)
         values = values.transpose(1, 2).contiguous().view(b * h, t, k)
 
-        queries = queries / (k ** (1/4))
-        keys    = keys / (k ** (1/4))
+        queries = queries / (k ** (1 / 4))
+        keys = keys / (k ** (1 / 4))
 
         dot = torch.bmm(queries, keys.transpose(1, 2))
 
@@ -40,6 +42,7 @@ class SelfAttention(nn.Module):
         out = torch.bmm(dot, values).view(b, h, t, k)
         out = out.transpose(1, 2).contiguous().view(b, t, h * k)
         return self.unifyheads(out)
+
 
 class TransformerBlock(nn.Module):
     def __init__(self, k, heads):
@@ -51,9 +54,9 @@ class TransformerBlock(nn.Module):
         self.norm2 = nn.LayerNorm(k)
 
         self.ff = nn.Sequential(
-          nn.Linear(k, 2 * k),
-          nn.ReLU(),
-          nn.Linear(2 * k, k))
+            nn.Linear(k, 2 * k),
+            nn.ReLU(),
+            nn.Linear(2 * k, k))
 
     def forward(self, x):
         attended = self.attention(x)
@@ -62,8 +65,9 @@ class TransformerBlock(nn.Module):
         fedforward = self.ff(x)
         return self.norm2(fedforward + x)
 
+
 class AA(nn.Module):
-    def __init__(self,  state_len,  num_actions, num_frames, transformer_depth=4,
+    def __init__(self, state_len, num_actions, num_frames, transformer_depth=4,
                  GRU_hidden=32, GRU_layers=2, attention_heads=4, dropout=0.2):
         super(AA, self).__init__()
         self.state_len = state_len
@@ -93,6 +97,7 @@ class AA(nn.Module):
         weight = next(self.parameters()).data
         hidden = weight.new(self.GRU_layers, self.num_frames, self.GRU_hidden).zero_()
         return hidden
+
 
 class AA_model:
     def __init__(self, state_len, num_actions, num_frames,
@@ -128,9 +133,10 @@ class AA_model:
         Q_sa, thidden = self.target(state_t1, self.target_hidden)
         Q_sa = Q_sa.detach()
         gamma = 0.99
-        new_targets = torch.Tensor([reward_batch[n] + ((1 - done_t[n]) * (gamma * torch.max(Q_sa[n]))) for n in range(len(targets))])
+        new_targets = torch.Tensor(
+            [reward_batch[n] + ((1 - done_t[n]) * (gamma * torch.max(Q_sa[n]))) for n in range(len(targets))])
 
-        #policy_loss = F.smooth_l1_loss(targets, new_targets)
+        # policy_loss = F.smooth_l1_loss(targets, new_targets)
         policy_loss = F.mse_loss(targets, new_targets)
 
         self.policy_optimizer.zero_grad()
@@ -154,13 +160,13 @@ class AA_model:
             self.replay_buffer.popleft()
 
     def save_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
-        torch.save({ "policy_state_dict": self.policy.state_dict(),
-                     "policy_hidden": self.policy_hidden,
-                   }, filename)
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
+        torch.save({"policy_state_dict": self.policy.state_dict(),
+                    "policy_hidden": self.policy_hidden,
+                    }, filename)
 
     def load_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
         if os.path.exists(filename):
             checkpoint = torch.load(filename)
             self.policy.load_state_dict(checkpoint['policy_state_dict'])

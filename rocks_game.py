@@ -1,6 +1,8 @@
-import random, sys
-import numpy as np
+import random
 from collections import deque
+
+import numpy as np
+
 
 class game_space:
     def __init__(self, width, height, num_agents, walls,
@@ -17,7 +19,7 @@ class game_space:
         self.num_agents = num_agents
         self.num_initial_rock_piles = max(min_rocks, self.cells * 0.015)
         self.num_holes = max(min_holes, self.cells * 0.006)
-        self.num_actions = 5 # up, down, left, right, drop
+        self.num_actions = 5  # up, down, left, right, drop
         self.moves = ["l", "r", "u", "d", "o"]
         self.walls = walls
         self.reset()
@@ -75,8 +77,8 @@ class game_space:
         self.agent_states = []
         pad = self.visible
         while len(self.agents) < self.num_agents:
-            xpos = random.randint(pad, self.width-(pad*2))
-            ypos = random.randint(pad, self.height-(pad*2))
+            xpos = random.randint(pad, self.width - (pad * 2))
+            ypos = random.randint(pad, self.height - (pad * 2))
             if self.game_space[ypos][xpos] != 0:
                 continue
             has_rock = 0
@@ -84,7 +86,7 @@ class game_space:
             if overlapped == False:
                 self.agents.append([xpos, ypos, has_rock])
                 self.agent_states.append(deque())
-                agent_index = len(self.agents)-1
+                agent_index = len(self.agents) - 1
                 state_size = self.get_state_size()
                 for n in range(self.previous_states):
                     self.agent_states[agent_index].append(np.zeros(state_size, dtype=int))
@@ -95,11 +97,11 @@ class game_space:
         for n in range(self.width):
             for m in range(self.visible):
                 space[m][n] = 1
-                space[self.height-(m+1)][n] = 1
+                space[self.height - (m + 1)][n] = 1
         for n in range(self.height):
             for m in range(self.visible):
                 space[n][m] = 1
-                space[n][self.width-(m+1)] = 1
+                space[n][self.width - (m + 1)] = 1
         return space
 
     def find_random_empty_cell(self, space):
@@ -108,8 +110,8 @@ class game_space:
         empty = False
         pad = self.visible
         while empty == False:
-            xpos = random.randint(pad, self.width-(pad*2))
-            ypos = random.randint(pad, self.height-(pad*2))
+            xpos = random.randint(pad, self.width - (pad * 2))
+            ypos = random.randint(pad, self.height - (pad * 2))
             if space[ypos][xpos] == 0:
                 empty = True
                 break
@@ -122,15 +124,15 @@ class game_space:
             xpos, ypos = self.find_random_empty_cell(space)
             space[ypos][xpos] = 1
             for n in range(50):
-                move = random.randint(0,3)
+                move = random.randint(0, 3)
                 if move == 0:
-                    xpos = max(0, xpos-1)
+                    xpos = max(0, xpos - 1)
                 elif move == 1:
-                    xpos = min(self.width-1, xpos+1)
+                    xpos = min(self.width - 1, xpos + 1)
                 elif move == 2:
-                    ypos = max(0, ypos-1)
+                    ypos = max(0, ypos - 1)
                 elif move == 3:
-                    ypos = min(self.height-1, ypos+1)
+                    ypos = min(self.height - 1, ypos + 1)
                 if space[ypos][xpos] == 0:
                     added += 1
                 space[ypos][xpos] = 1
@@ -147,16 +149,16 @@ class game_space:
 
     def get_visible(self, ypos, xpos):
         lpad = self.visible
-        rpad = self.visible+1
-        left = xpos-lpad
-        right = xpos+rpad
-        top = ypos-lpad
-        bottom = ypos+rpad
+        rpad = self.visible + 1
+        left = xpos - lpad
+        right = xpos + rpad
+        top = ypos - lpad
+        bottom = ypos + rpad
         visible = np.array(self.game_space[left:right, top:bottom], dtype=int)
         return visible
 
     def get_state_size(self):
-        state_size = ((self.visible*2)+1)*((self.visible*2)+1)
+        state_size = ((self.visible * 2) + 1) * ((self.visible * 2) + 1)
         if self.split_layers == True:
             return 5 * state_size
         return state_size
@@ -192,7 +194,7 @@ class game_space:
             if x == xpos and y == ypos:
                 n -= 1
                 if n < 1:
-                    del(self.rock_piles[index])
+                    del (self.rock_piles[index])
                 else:
                     self.rock_piles[index] = [x, y, n]
 
@@ -204,7 +206,7 @@ class game_space:
                 found_index = index
         if found_index is not None:
             x, y, n = self.rock_piles[found_index]
-            self.rock_piles[found_index] = [x, y, n+1]
+            self.rock_piles[found_index] = [x, y, n + 1]
         else:
             self.rock_piles.append([xpos, ypos, 1])
 
@@ -213,24 +215,24 @@ class game_space:
         x, y, r = self.agents[index]
         newx = x
         newy = y
-        if move == 0: # left
-            newx = max(0, x-1)
-        elif move == 1: # right
-            newx = min(self.width-1, x+1)
-        elif move == 2: # up
-            newy = max(0, y-1)
-        elif move == 3: # down
-            newy = min(self.height-1, y+1)
+        if move == 0:  # left
+            newx = max(0, x - 1)
+        elif move == 1:  # right
+            newx = min(self.width - 1, x + 1)
+        elif move == 2:  # up
+            newy = max(0, y - 1)
+        elif move == 3:  # down
+            newy = min(self.height - 1, y + 1)
         elif move == 4:
-            if r > 0: # Drop a rock to the right
+            if r > 0:  # Drop a rock to the right
                 # If a rock is dropped into the deposit zone, get a reward, and the rock is gone
-                if self.game_space[y][x+1] == 4:
+                if self.game_space[y][x + 1] == 4:
                     reward = 1
                     r = 0
                 # Drop a rock on the ground to the right, if nothing else is there
-                elif self.game_space[y][x+1] == 0:
+                elif self.game_space[y][x + 1] == 0:
                     reward = 0
-                    self.drop_rock(x+1, y)
+                    self.drop_rock(x + 1, y)
                     r = 0
         moved = False
         if move < 4:
@@ -302,4 +304,3 @@ class game_space:
                 printable += self.get_printable(item)
             printable += "\n"
         return printable
-

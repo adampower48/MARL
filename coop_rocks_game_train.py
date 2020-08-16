@@ -1,8 +1,11 @@
+import json
+import os
+import sys
+import time
+from collections import Counter
+
 from coop_rocks_game import *
 from misc import *
-import time, sys, os
-from collections import Counter
-import json
 
 game_space_width = 50
 game_space_height = 20
@@ -18,6 +21,7 @@ max_fill = 0.30
 model_type = "PG"
 print_visuals = True
 print_preds = False
+
 
 def print_all_preds(all_preds):
     msg = ""
@@ -43,13 +47,14 @@ def print_all_preds(all_preds):
         if index in stochastic:
             ra = str(rpa[index])
             label = "stoc"
-        msg += label + "("+"%02d"%index+")" + rock + ":" + ppred + lpred + ra + rew + "\n" 
+        msg += label + "(" + "%02d" % index + ")" + rock + ":" + ppred + lpred + ra + rew + "\n"
     print(msg)
+
 
 dirname = model_type + "_coop_rocks_game_save"
 if not os.path.exists(dirname):
     os.makedirs(dirname)
-#random.seed(1)
+# random.seed(1)
 flatten_state, prev_states = get_state_params(model_type)
 gs = game_space(game_space_width, game_space_height, num_agents, walls,
                 min_rocks=min_rocks, min_holes=min_holes,
@@ -108,7 +113,7 @@ while True:
     current_iterations += 1
     num_rock_piles = len(gs.rock_piles)
     game_space_size = game_space_width * game_space_height
-    percent_filled = num_rock_piles/game_space_size
+    percent_filled = num_rock_piles / game_space_size
     if percent_filled > max_fill or num_rock_piles < 1 or current_iterations >= episode_limit:
         done = 1
 
@@ -117,15 +122,15 @@ while True:
     msg = "Model: " + model_type
     msg += " Iter: " + str(iteration)
     msg += " Epis: " + str(episode)
-    msg += " Epsi: " + "%.4f"%epsilon
+    msg += " Epsi: " + "%.4f" % epsilon
     msg += " Stoc: " + str(len(stochastic))
-    msg += " Filled percent: " + "%.2f"%(percent_filled*100)
+    msg += " Filled percent: " + "%.2f" % (percent_filled * 100)
     msg += "\nCurrent iter: " + str(current_iterations)
     msg += " Last iter: " + str(last_iterations)
     msg += "\nRewards: " + str(episode_rewards)
     msg += " Last: " + str(last_reward)
     msg += " Total: " + str(total_rewards)
-    msg += " Mean: " + "%.2f"%mean_rewards
+    msg += " Mean: " + "%.2f" % mean_rewards
 
     states = []
     states_t1 = []
@@ -146,10 +151,10 @@ while True:
         all_preds.append(pred)
         last_pred[index] = pred
         if index in stochastic:
-            move = random.randint(0, gs.num_actions-1)
+            move = random.randint(0, gs.num_actions - 1)
         else:
             move = np.argmax(pred)
-        reward  = gs.move_agent(index, move)
+        reward = gs.move_agent(index, move)
         state_t1 = get_state(gs, index, model_type)
         states_t1.append(state_t1)
         if reward == 1:
@@ -174,12 +179,12 @@ while True:
             print_all_preds(all_preds)
         time.sleep(0.05)
     else:
-        echunk = int(episode_limit*0.05)
+        echunk = int(episode_limit * 0.05)
         if current_iterations % echunk == 0:
-            nchunk = int(current_iterations/echunk)
+            nchunk = int(current_iterations / echunk)
             sys.stdout.write("\r")
             sys.stdout.flush()
-            sys.stdout.write("#"*nchunk)
+            sys.stdout.write("#" * nchunk)
             sys.stdout.flush()
 
     if iteration > 0 and iteration % update_iter == 0:
@@ -192,7 +197,7 @@ while True:
     for n in range(gs.num_agents):
         models[n].train()
 
-    epsilon = max(min_epsilon, 1 - (total_rewards*epsilon_degrade))
+    epsilon = max(min_epsilon, 1 - (total_rewards * epsilon_degrade))
 
     if done == 1:
         if print_visuals == False:
@@ -202,7 +207,7 @@ while True:
             for n in range(gs.num_agents):
                 sys.stdout.write("\r")
                 sys.stdout.flush()
-                sys.stdout.write("Training model: " + "%03d"%n)
+                sys.stdout.write("Training model: " + "%03d" % n)
                 sys.stdout.flush()
                 models[n].update_policy()
         ns = int(epsilon * gs.num_agents)

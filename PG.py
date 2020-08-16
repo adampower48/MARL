@@ -1,21 +1,21 @@
-import random, os, sys, json
+import os
+
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
-from torch.autograd import Variable
-from collections import deque
+import torch.optim as optim
 
 # Training params
 GAMMA = 0.9
 min_hidden = 512
-init_w=3e-3
+init_w = 3e-3
 
-init_w=3e-3
+init_w = 3e-3
+
 
 class Policy(nn.Module):
-    def __init__(self,  state_len,  num_actions, num_frames, transformer_depth=4,
+    def __init__(self, state_len, num_actions, num_frames, transformer_depth=4,
                  GRU_hidden=64, GRU_layers=2, attention_heads=4):
         super(Policy, self).__init__()
         self.state_len = state_len
@@ -48,6 +48,7 @@ class Policy(nn.Module):
         hidden = weight.new(self.GRU_layers, self.num_frames, self.GRU_hidden).zero_()
         return hidden
 
+
 class PG_model:
     def __init__(self, state_size, num_actions, num_frames):
         self.policy = Policy(state_size, num_actions, num_frames)
@@ -57,12 +58,12 @@ class PG_model:
     def update_policy(self):
         discounted_rewards = []
 
-        #print(" Num rewards: " + str(len(self.rewards)))
+        # print(" Num rewards: " + str(len(self.rewards)))
         for t in range(len(self.rewards)):
-            Gt = 0 
+            Gt = 0
             pw = 0
             for r in self.rewards[t:]:
-                Gt = Gt + GAMMA**pw * r
+                Gt = Gt + GAMMA ** pw * r
                 pw = pw + 1
             discounted_rewards.append(Gt)
 
@@ -101,13 +102,13 @@ class PG_model:
         self.rewards.append(reward)
 
     def save_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
-        torch.save({ "policy_state_dict": self.policy.state_dict(),
-                     "policy_hidden": self.policy_hidden,
-                   }, filename)
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
+        torch.save({"policy_state_dict": self.policy.state_dict(),
+                    "policy_hidden": self.policy_hidden,
+                    }, filename)
 
     def load_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
         if os.path.exists(filename):
             checkpoint = torch.load(filename)
             self.policy.load_state_dict(checkpoint['policy_state_dict'])

@@ -1,27 +1,29 @@
-import random, math
+import random
+
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
+import torch.optim as optim
 from torch.distributions import Normal
-import numpy as np
 
 # Training params
 batch_size = 16
 buffer_max = 10000
 
-gamma=0.99
-mean_lambda=1e-3
-std_lambda=1e-3
-z_lambda=0.0
-soft_tau=1e-2
+gamma = 0.99
+mean_lambda = 1e-3
+std_lambda = 1e-3
+z_lambda = 0.0
+soft_tau = 1e-2
 hidden_size = 256
-init_w=3e-3
-log_std_min=-20
-log_std_max=2
+init_w = 3e-3
+log_std_min = -20
+log_std_max = 2
 
 use_cuda = torch.cuda.is_available()
-device   = torch.device("cuda" if use_cuda else "cpu")
+device = torch.device("cuda" if use_cuda else "cpu")
+
 
 # Implementation of soft-actor-critic based on https://github.com/higgsfield/RL-Adventure-2
 class ReplayBuffer:
@@ -44,6 +46,7 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
+
 class GN(nn.Module):
     def __init__(self, state_dim, num_actions):
         super(GN, self).__init__()
@@ -62,6 +65,7 @@ class GN(nn.Module):
         x = self.linear3(x)
         return x
 
+
 class ValueNetwork(nn.Module):
     def __init__(self, state_dim):
         super(ValueNetwork, self).__init__()
@@ -78,6 +82,7 @@ class ValueNetwork(nn.Module):
         x = F.relu(self.linear2(x))
         x = self.linear3(x)
         return x
+
 
 class SoftQNetwork(nn.Module):
     def __init__(self, state_dim, num_actions):
@@ -96,6 +101,7 @@ class SoftQNetwork(nn.Module):
         x = F.relu(self.linear2(x))
         x = self.linear3(x)
         return x
+
 
 class PolicyNetwork(nn.Module):
     def __init__(self, state_dim, num_actions):
@@ -118,7 +124,7 @@ class PolicyNetwork(nn.Module):
     def forward(self, state):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
-        mean    = self.mean_linear(x)
+        mean = self.mean_linear(x)
         log_std = self.log_std_linear(x)
         log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
         return mean, log_std
@@ -142,11 +148,12 @@ class PolicyNetwork(nn.Module):
         std = log_std.exp()
 
         normal = Normal(mean, std)
-        z      = normal.sample()
+        z = normal.sample()
         action = torch.tanh(z)
 
-        action  = action.detach().cpu().numpy()
+        action = action.detach().cpu().numpy()
         return action[0]
+
 
 class SAC_model:
     def __init__(self, state_dim, num_actions,
@@ -163,15 +170,15 @@ class SAC_model:
                                        self.value_net.parameters()):
             target_param.data.copy_(param.data)
 
-        self.value_criterion  = nn.MSELoss()
+        self.value_criterion = nn.MSELoss()
         self.soft_q_criterion = nn.MSELoss()
 
         self.learning_rate = 3e-4
-        self.value_lr  = self.learning_rate
+        self.value_lr = self.learning_rate
         self.soft_q_lr = self.learning_rate
         self.policy_lr = self.learning_rate
 
-        self.value_optimizer  = optim.Adam(self.value_net.parameters(), lr=self.value_lr)
+        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=self.value_lr)
         self.soft_q_optimizer = optim.Adam(self.soft_q_net.parameters(), lr=self.soft_q_lr)
         self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=self.policy_lr)
 
@@ -187,7 +194,6 @@ class SAC_model:
         self.buffer_max = buffer_max
         self.batch_size = batch_size
         self.replay_buffer = ReplayBuffer(self.buffer_max)
-
 
     def push_replay(self, state, action, reward, done, state_t1):
         self.replay_buffer.push(state, action, reward, state_t1, done)
@@ -210,7 +216,7 @@ class SAC_model:
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(device)
 
         expected_q_value = self.soft_q_net(state, action)
-        expected_value   = self.value_net(state)
+        expected_value = self.value_net(state)
         new_action, log_prob, z, mean, log_std = self.policy_net.evaluate(state)
 
         if self.with_guesses == True:
@@ -233,8 +239,8 @@ class SAC_model:
         policy_loss = (log_prob * (log_prob - log_prob_target).detach()).mean()
 
         mean_loss = mean_lambda * mean.pow(2).mean()
-        std_loss  = std_lambda * log_std.pow(2).mean()
-        z_loss    = z_lambda * z.pow(2).sum(1).mean()
+        std_loss = std_lambda * log_std.pow(2).mean()
+        z_loss = z_lambda * z.pow(2).sum(1).mean()
 
         policy_loss += mean_loss + std_loss + z_loss
 
@@ -263,4 +269,3 @@ class SAC_model:
         for target_param, param in zip(self.target_value_net.parameters(),
                                        self.value_net.parameters()):
             target_param.data.copy_(target_param.data * (1.0 - soft_tau) + param.data * soft_tau)
-

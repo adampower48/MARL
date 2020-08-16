@@ -1,16 +1,17 @@
-import random, os, sys, json
+import os
+
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
+import torch.optim as optim
 from torch.autograd import Variable
-from collections import deque
 
 # Training params
 GAMMA = 0.9
 min_hidden = 512
-init_w=3e-3
+init_w = 3e-3
+
 
 class Policy(nn.Module):
     def __init__(self, state_size, num_actions):
@@ -42,6 +43,7 @@ class Policy(nn.Module):
         log_prob = torch.log(probs.squeeze(0)[highest_prob_action])
         return highest_prob_action, log_prob
 
+
 class REINFORCE_model:
     def __init__(self, state_size, num_actions):
         self.policy = Policy(state_size, num_actions)
@@ -56,7 +58,7 @@ class REINFORCE_model:
             Gt = 0
             pw = 0
             for r in self.rewards[t:]:
-                Gt = Gt + GAMMA**pw * r
+                Gt = Gt + GAMMA ** pw * r
                 pw = pw + 1
             discounted_rewards.append(Gt)
 
@@ -92,12 +94,12 @@ class REINFORCE_model:
         self.rewards.append(reward)
 
     def save_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
-        torch.save({ "policy_state_dict": self.policy.state_dict(),
-                   }, filename)
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
+        torch.save({"policy_state_dict": self.policy.state_dict(),
+                    }, filename)
 
     def load_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
         if os.path.exists(filename):
             checkpoint = torch.load(filename)
             self.policy.load_state_dict(checkpoint['policy_state_dict'])

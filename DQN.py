@@ -1,14 +1,17 @@
-import random, os, sys, json
+import os
+import random
+from collections import deque
+
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
-from collections import deque
+import torch.optim as optim
 
 # Training params
 gamma = 0.99
 min_hidden = 512
-init_w=3e-3
+init_w = 3e-3
+
 
 class GN(nn.Module):
     def __init__(self, state_size, num_actions):
@@ -33,6 +36,7 @@ class GN(nn.Module):
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         return self.linear3(x)
+
 
 class DQN(nn.Module):
     def __init__(self, state_size, num_actions, with_softmax=False, dropout=0.0):
@@ -63,6 +67,7 @@ class DQN(nn.Module):
             return F.softmax(self.linear3(x), dim=-1)
         else:
             return self.linear3(x)
+
 
 class DQN_model:
     def __init__(self, state_size, num_actions,
@@ -96,8 +101,8 @@ class DQN_model:
         if len(self.replay_buffer) < self.batch_size + 1:
             return
         if self.sequential_replay == True:
-            startx = random.randint(0, len(self.replay_buffer)-self.batch_size)
-            minibatch = list(self.replay_buffer)[startx:startx+self.batch_size]
+            startx = random.randint(0, len(self.replay_buffer) - self.batch_size)
+            minibatch = list(self.replay_buffer)[startx:startx + self.batch_size]
         else:
             minibatch = random.sample(self.replay_buffer, self.batch_size)
         state_t, action_t, reward_t, done_t, state_t1 = zip(*minibatch)
@@ -120,7 +125,8 @@ class DQN_model:
 
         targets = targets.gather(1, action_batch).squeeze(1)
         Q_sa = self.target(state_t1).detach()
-        new_targets = torch.Tensor([reward_batch[n] + ((1-done_t[n]) * (gamma * torch.max(Q_sa[n]))) for n in range(len(targets))])
+        new_targets = torch.Tensor(
+            [reward_batch[n] + ((1 - done_t[n]) * (gamma * torch.max(Q_sa[n]))) for n in range(len(targets))])
 
         policy_loss = F.smooth_l1_loss(targets, new_targets)
 
@@ -159,12 +165,12 @@ class DQN_model:
             self.replay_buffer.popleft()
 
     def save_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
-        torch.save({ "policy_state_dict": self.policy.state_dict(),
-                   }, filename)
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
+        torch.save({"policy_state_dict": self.policy.state_dict(),
+                    }, filename)
 
     def load_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
         if os.path.exists(filename):
             checkpoint = torch.load(filename)
             self.policy.load_state_dict(checkpoint['policy_state_dict'])

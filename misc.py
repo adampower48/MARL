@@ -1,11 +1,9 @@
-import numpy as np
-import torch
-from DRQN import *
+from AA import *
 from DQN import *
+from DRQN import *
+from PG import *
 from REINFORCE import *
 from SAC import *
-from AA import *
-from PG import *
 
 visible = 4
 epsilon = 1.0
@@ -35,6 +33,7 @@ blu = "\x1b[0;34;40m"
 pur = "\x1b[0;35;40m"
 end = "\x1b[0m"
 
+
 # Detailed printout of model predictions
 def print_agent_details(gs, index):
     x, y, s = gs.agents[index]
@@ -46,12 +45,15 @@ def print_agent_details(gs, index):
         msg += "\n"
     print(msg)
 
+
 def pretty_pred(move):
     color = 31 + move
-    return "\x1b[1;"+str(31+move)+";40m" + str(move) + end
+    return "\x1b[1;" + str(31 + move) + ";40m" + str(move) + end
+
 
 def pretty_preds(preds):
     return "[" + "".join([pretty_pred(x) for x in preds]) + "]"
+
 
 def pretty_vecs(vecs):
     if len(vecs.shape) > 1:
@@ -67,16 +69,18 @@ def pretty_vecs(vecs):
             e = " "
         if i == top:
             start = highlight
-        vs.append(start + e + "%.2f"%v + end)
+        vs.append(start + e + "%.2f" % v + end)
     sep = normal + ", " + end
     ret = "[" + sep.join(vs) + "]"
     return ret
+
 
 def get_state(gs, index, model_type):
     state = torch.FloatTensor(gs.get_agent_state(index))
     if model_type not in sac_models:
         state = state.unsqueeze(0)
     return state
+
 
 def get_state_params(model_type):
     flatten_state = False
@@ -86,6 +90,7 @@ def get_state_params(model_type):
     elif model_type in rnn_models:
         prev_states = 4
     return flatten_state, prev_states
+
 
 def get_model(model_type, gs):
     num_actions = gs.num_actions

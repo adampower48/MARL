@@ -1,7 +1,11 @@
-from tag_game import *
-from misc import *
-import time, sys, os, re
+import os
+import re
+import sys
+import time
 from collections import Counter
+
+from misc import *
+from tag_game import *
 
 game_space_width = 60
 game_space_height = 25
@@ -15,6 +19,7 @@ episode_limit = 512
 model_type = "PG"
 print_preds = False
 print_visuals = True
+
 
 def print_all_preds(all_preds):
     msg = ""
@@ -42,8 +47,9 @@ def print_all_preds(all_preds):
             plist[index].popleft()
         lpred = pretty_vecs(last_pred[index]) + " "
         ppred = pretty_preds(plist[index]) + " "
-        msg += first + "("+"%02d"%index+"):" + ppred + lpred + cap + rew + "\n" 
+        msg += first + "(" + "%02d" % index + "):" + ppred + lpred + cap + rew + "\n"
     print(msg)
+
 
 dirname = model_type + "_tag_game_save"
 
@@ -59,7 +65,7 @@ else:
             model_num = m.group(1)
             trained_models.append(int(model_num))
 
-#random.seed(1)
+# random.seed(1)
 flatten_state, prev_states = get_state_params(model_type)
 gs = game_space(game_space_width, game_space_height, num_agents, walls, bonuses,
                 visible=visible, prev_states=prev_states,
@@ -136,18 +142,18 @@ while True:
     msg = "Model: " + model_type
     msg += " Iteration: " + str(iteration)
     msg += " Episode: " + str(episode)
-    msg += " Epsilon: " + "%.4f"%epsilon
-    msg += "\nTeam 1 size: " + str(team1) 
+    msg += " Epsilon: " + "%.4f" % epsilon
+    msg += "\nTeam 1 size: " + str(team1)
     msg += " T1 score: " + str(team_bonuses[0])
     msg += " T1 rewards: " + str(team_rewards[0])
-    msg += "\nTeam 2 size: " + str(team2) 
+    msg += "\nTeam 2 size: " + str(team2)
     msg += " T2 score: " + str(team_bonuses[1])
     msg += " T2 rewards: " + str(team_rewards[1])
-    msg += "\nLast winner: " + str(previous_winner+1)
-    msg += " Winning: " + str(winning+1)
+    msg += "\nLast winner: " + str(previous_winner + 1)
+    msg += " Winning: " + str(winning + 1)
     msg += "\nEpisode length: " + str(current_iterations)
     msg += " Last length: " + str(last_episode_length)
-    msg += " Total rewards: " + "%.2f"%total_rewards
+    msg += " Total rewards: " + "%.2f" % total_rewards
 
     states = []
     states_t1 = []
@@ -167,10 +173,10 @@ while True:
         all_preds.append(pred)
         last_pred[index] = pred
         if index in stochastic:
-            move = random.randint(0, gs.num_actions-1)
+            move = random.randint(0, gs.num_actions - 1)
         else:
             move = np.argmax(pred)
-        reward  = gs.move_agent(index, move)
+        reward = gs.move_agent(index, move)
         state_t1 = get_state(gs, index, model_type)
         states_t1.append(state_t1)
         total_rewards += reward
@@ -206,12 +212,12 @@ while True:
             print_all_preds(all_preds)
         time.sleep(0.05)
     else:
-        echunk = int(episode_limit*0.05)
+        echunk = int(episode_limit * 0.05)
         if current_iterations % echunk == 0:
-            nchunk = int(current_iterations/echunk)
+            nchunk = int(current_iterations / echunk)
             sys.stdout.write("\r")
             sys.stdout.flush()
-            sys.stdout.write("#"*nchunk)
+            sys.stdout.write("#" * nchunk)
             sys.stdout.flush()
 
     if iteration > 0 and iteration % update_iter == 0:
@@ -224,7 +230,7 @@ while True:
     for n in range(gs.num_agents):
         models[n].train()
 
-    epsilon = max(min_epsilon, 1 - (total_rewards*epsilon_degrade))
+    epsilon = max(min_epsilon, 1 - (total_rewards * epsilon_degrade))
 
     if done == 1:
         if print_visuals == False:
@@ -234,7 +240,7 @@ while True:
             for n in range(gs.num_agents):
                 sys.stdout.write("\r")
                 sys.stdout.flush()
-                sys.stdout.write("Training model: " + "%03d"%n)
+                sys.stdout.write("Training model: " + "%03d" % n)
                 sys.stdout.flush()
                 models[n].update_policy()
         ns = int(epsilon * gs.num_agents)
@@ -258,4 +264,3 @@ while True:
         current_iterations = 0
         episode_rewards = 0
         gs.reset()
-

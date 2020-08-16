@@ -1,16 +1,18 @@
-import random, os
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
+import os
 from collections import deque
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
 # Training params
-init_w=3e-3
+init_w = 3e-3
 gamma = 0.99
 
+
 class DRQN(nn.Module):
-    def __init__(self,  state_len,  num_actions, num_frames,
+    def __init__(self, state_len, num_actions, num_frames,
                  GRU_hidden=128, GRU_layers=1, dropout=0.5):
         super(DRQN, self).__init__()
         self.state_len = state_len
@@ -40,6 +42,7 @@ class DRQN(nn.Module):
         weight = next(self.parameters()).data
         hidden = weight.new(self.GRU_layers, self.num_frames, self.GRU_hidden).zero_()
         return hidden
+
 
 class DRQN_model:
     def __init__(self, state_len, num_actions, num_frames,
@@ -74,7 +77,8 @@ class DRQN_model:
         targets = targets.gather(1, action_batch).squeeze(1)
         Q_sa, thidden = self.target(state_t1, self.target_hidden)
         Q_sa_d = Q_sa.detach()
-        new_targets = torch.Tensor([reward_batch[n] + ((1 - done_t[n]) * (gamma * torch.max(Q_sa_d[n]))) for n in range(len(targets))])
+        new_targets = torch.Tensor(
+            [reward_batch[n] + ((1 - done_t[n]) * (gamma * torch.max(Q_sa_d[n]))) for n in range(len(targets))])
 
         policy_loss = F.smooth_l1_loss(targets, new_targets)
 
@@ -99,13 +103,13 @@ class DRQN_model:
             self.replay_buffer.popleft()
 
     def save_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
-        torch.save({ "policy_state_dict": self.policy.state_dict(),
-                     "policy_hidden": self.policy_hidden,
-                   }, filename)
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
+        torch.save({"policy_state_dict": self.policy.state_dict(),
+                    "policy_hidden": self.policy_hidden,
+                    }, filename)
 
     def load_model(self, dirname, index):
-        filename = os.path.join(dirname, "policy_model_" + "%02d"%index + ".pt")
+        filename = os.path.join(dirname, "policy_model_" + "%02d" % index + ".pt")
         if os.path.exists(filename):
             checkpoint = torch.load(filename)
             self.policy.load_state_dict(checkpoint['policy_state_dict'])

@@ -1,6 +1,8 @@
-import random, sys
-import numpy as np
+import random
 from collections import deque
+
+import numpy as np
+
 
 class game_space:
     def __init__(self, split_layers=False, flatten_state=False,
@@ -22,7 +24,7 @@ class game_space:
         self.previous_states = prev_states
         self.initial_area = self.get_game_area()
         self.height, self.width = self.initial_area.shape
-        self.num_actions = 5 # up, down, left, right, action
+        self.num_actions = 5  # up, down, left, right, action
         self.moves = ["l", "r", "u", "d", "a"]
         self.reset()
 
@@ -34,15 +36,15 @@ class game_space:
         temp = np.array(area)
         height, width = temp.shape
         new_area = []
-        new_height = height + 2 * (self.visible-1)
-        new_width = width + 2 * (self.visible-1)
-        for n in range(self.visible-1):
-            new_area.append([1]*new_width)
+        new_height = height + 2 * (self.visible - 1)
+        new_width = width + 2 * (self.visible - 1)
+        for n in range(self.visible - 1):
+            new_area.append([1] * new_width)
         for row in area:
-            new_row = [1]*(self.visible-1) + row + [1]*(self.visible-1)
+            new_row = [1] * (self.visible - 1) + row + [1] * (self.visible - 1)
             new_area.append(new_row)
-        for n in range(self.visible-1):
-            new_area.append([1]*new_width)
+        for n in range(self.visible - 1):
+            new_area.append([1] * new_width)
         return np.array(new_area)
 
     def reset(self):
@@ -60,15 +62,15 @@ class game_space:
 
     def create_lieutenants(self):
         self.lieutenants = []
-        self.num_lieutenants = [0,0]
+        self.num_lieutenants = [0, 0]
         hp = self.lieutenant_hp
-        for item in np.argwhere(self.initial_area==2):
+        for item in np.argwhere(self.initial_area == 2):
             ypos, xpos = item
             team = 1
             self.lieutenants.append([xpos, ypos, team, hp])
             self.game_space[ypos, xpos] = 0
             self.num_lieutenants[0] += 1
-        for item in np.argwhere(self.initial_area==3):
+        for item in np.argwhere(self.initial_area == 3):
             ypos, xpos = item
             team = 2
             self.lieutenants.append([xpos, ypos, team, hp])
@@ -78,12 +80,12 @@ class game_space:
     def create_commanders(self):
         self.commanders = []
         hp = self.commander_hp
-        for item in np.argwhere(self.initial_area==4):
+        for item in np.argwhere(self.initial_area == 4):
             ypos, xpos = item
             team = 1
             self.commanders.append([xpos, ypos, team, hp])
             self.game_space[ypos, xpos] = 0
-        for item in np.argwhere(self.initial_area==5):
+        for item in np.argwhere(self.initial_area == 5):
             ypos, xpos = item
             team = 2
             self.commanders.append([xpos, ypos, team, hp])
@@ -91,14 +93,14 @@ class game_space:
 
     def create_new_agents(self):
         t1_start_pos = []
-        for item in np.argwhere(self.initial_area==6):
+        for item in np.argwhere(self.initial_area == 6):
             ypos, xpos = item
             xpos = xpos - self.visible
             ypos = ypos - self.visible
             t1_start_pos.append([ypos, xpos])
             self.game_space[ypos, xpos] = 0
         t2_start_pos = []
-        for item in np.argwhere(self.initial_area==7):
+        for item in np.argwhere(self.initial_area == 7):
             ypos, xpos = item
             xpos = xpos - self.visible
             ypos = ypos - self.visible
@@ -116,16 +118,16 @@ class game_space:
                     y, x = t1_start_pos[index]
                 else:
                     y, x = t2_start_pos[index]
-                xpos = x+self.visible
-                ypos = y+self.visible
+                xpos = x + self.visible
+                ypos = y + self.visible
                 hp = self.agent_hp
                 self.agents.append([xpos, ypos, team, unit_type, hp])
                 self.agent_states.append(deque())
-                agent_index = len(self.agents)-1
+                agent_index = len(self.agents) - 1
                 state_size = self.get_state_size()
                 for n in range(self.previous_states):
                     self.agent_states[agent_index].append(np.zeros(state_size, dtype=int))
-                self.game_space[ypos][xpos] = 10*team + unit_type
+                self.game_space[ypos][xpos] = 10 * team + unit_type
                 self.spawn_points.append([xpos, ypos])
         self.num_agents = len(self.agents)
 
@@ -135,8 +137,8 @@ class game_space:
         empty = False
         pad = self.visible
         while empty == False:
-            xpos = random.randint(pad, self.width-(pad*2))
-            ypos = random.randint(pad, self.height-(pad*2))
+            xpos = random.randint(pad, self.width - (pad * 2))
+            ypos = random.randint(pad, self.height - (pad * 2))
             if space[ypos][xpos] == 0:
                 empty = True
                 break
@@ -146,7 +148,7 @@ class game_space:
         for item in self.agents:
             xpos, ypos, t, u, h = item
             if h > 0:
-                space[ypos][xpos] = 10*t + u
+                space[ypos][xpos] = 10 * t + u
             else:
                 space[ypos][xpos] = 0
         return space
@@ -155,7 +157,7 @@ class game_space:
         for item in self.lieutenants:
             xpos, ypos, t, h = item
             if h > 0:
-                space[ypos][xpos] = 1+t
+                space[ypos][xpos] = 1 + t
             else:
                 space[ypos][xpos] = 0
         return space
@@ -163,7 +165,7 @@ class game_space:
     def add_commanders(self, space):
         for item in self.commanders:
             xpos, ypos, t, h = item
-            space[ypos][xpos] = 3+t
+            space[ypos][xpos] = 3 + t
         return space
 
     def get_lieutenant_at_position(self, xpos, ypos):
@@ -182,9 +184,9 @@ class game_space:
         index = self.get_lieutenant_at_position(xpos, ypos)
         x, y, t, h = self.lieutenants[index]
         self.got_hit.append([x, y])
-        h = max(0, h-dmg)
+        h = max(0, h - dmg)
         self.lieutenants[index] = [x, y, t, h]
-        lieutenants_alive = [0,0]
+        lieutenants_alive = [0, 0]
         for item in self.lieutenants:
             x, y, t, h = item
             if t == 1:
@@ -199,7 +201,7 @@ class game_space:
         index = self.get_commander_at_position(xpos, ypos)
         x, y, t, h = self.commanders[index]
         self.got_hit.append([x, y])
-        h = max(0, h-dmg)
+        h = max(0, h - dmg)
         self.commanders[index] = [x, y, t, h]
         return h
 
@@ -212,22 +214,22 @@ class game_space:
 
     def get_visible(self, ypos, xpos, visible):
         lpad = visible
-        rpad = visible+1
-        left = xpos-lpad
-        right = xpos+rpad
-        top = ypos-lpad
-        bottom = ypos+rpad
+        rpad = visible + 1
+        left = xpos - lpad
+        right = xpos + rpad
+        top = ypos - lpad
+        bottom = ypos + rpad
         visible = np.array(self.game_space[left:right, top:bottom], dtype=int)
         return visible
 
     def get_item_in_visible(self, xpos, ypos, item, visible):
         area = self.get_visible(xpos, ypos, visible)
-        coords = np.argwhere(area==item)
+        coords = np.argwhere(area == item)
         new_coords = []
         for c in coords:
             y, x = c
-            y = ypos-visible+y
-            x = xpos-visible+x
+            y = ypos - visible + y
+            x = xpos - visible + x
             new_coords.append([x, y])
         return new_coords
 
@@ -322,7 +324,7 @@ class game_space:
         return healed
 
     def get_state_size(self):
-        state_size = ((self.visible*2)+1)*((self.visible*2)+1)
+        state_size = ((self.visible * 2) + 1) * ((self.visible * 2) + 1)
         if self.split_layers == True:
             return 4 * state_size
         return state_size
@@ -363,13 +365,13 @@ class game_space:
         index = self.get_agent_at_position(xpos, ypos)
         x, y, t, u, h = self.agents[index]
         self.got_hit.append([x, y])
-        h = max(0, h-dmg)
+        h = max(0, h - dmg)
         if h > 0:
             self.agents[index] = [x, y, t, u, h]
-        else: # agent died - respawn and decrement reinforcements counter
+        else:  # agent died - respawn and decrement reinforcements counter
             newx, newy = self.spawn_points[index]
             self.agents[index] = [newx, newy, t, u, self.agent_hp]
-            self.reinforcements[t-1] = self.reinforcements[t-1] - 1
+            self.reinforcements[t - 1] = self.reinforcements[t - 1] - 1
         return index
 
     def get_winner(self):
@@ -392,7 +394,7 @@ class game_space:
     def get_commander_damage(self, xpos, ypos):
         index = self.get_commander_at_position(xpos, ypos)
         x, y, t, h = self.commanders[index]
-        damage = 2 * self.num_lieutenants[t-1]
+        damage = 2 * self.num_lieutenants[t - 1]
         return damage
 
     def move_agent(self, index, move):
@@ -400,14 +402,14 @@ class game_space:
         x, y, t, u, h = self.agents[index]
         newx = x
         newy = y
-        if move == 0: # left
-            newx = x-1
-        elif move == 1: # right
-            newx = x+1
-        elif move == 2: # up
-            newy = y-1
-        elif move == 3: # down
-            newy = y+1
+        if move == 0:  # left
+            newx = x - 1
+        elif move == 1:  # right
+            newx = x + 1
+        elif move == 2:  # up
+            newy = y - 1
+        elif move == 3:  # down
+            newy = y + 1
         moved = False
         item = self.game_space[newy][newx]
         if item == 0:
@@ -459,27 +461,27 @@ class game_space:
                     reward = self.small_reward * 10
         if move == 4:
             if t == 1:
-                if u == 0: # t1 soldier
+                if u == 0:  # t1 soldier
                     pass
-                elif u == 1: # t1 mage
+                elif u == 1:  # t1 mage
                     ret = self.mage_shoot(index)
                     if ret != False:
                         reward = self.small_reward * ret
                         x, y, t, u, h = self.agents[index]
-                elif u == 2: # t1 healer
+                elif u == 2:  # t1 healer
                     ret = self.heal(index)
                     if ret == True:
                         reward = self.small_reward
                         x, y, t, u, h = self.agents[index]
             elif t == 2:
-                if u == 0: # t2 soldier
+                if u == 0:  # t2 soldier
                     pass
-                elif u == 1: # t2 mage
+                elif u == 1:  # t2 mage
                     ret = self.mage_shoot(index)
                     if ret != False:
                         reward = self.small_reward * ret
                         x, y, t, u, h = self.agents[index]
-                elif u == 2: # t2 healer
+                elif u == 2:  # t2 healer
                     ret = self.heal(index)
                     if ret == True:
                         reward = self.small_reward
@@ -524,27 +526,27 @@ class game_space:
             bg = "41"
         if healed == True:
             bg = "42"
-        if item == 1: # wall
+        if item == 1:  # wall
             return "\x1b[2;37;40m" + "▒" + "\x1b[0m"
-        elif item == 2: # t1 lieutenant
+        elif item == 2:  # t1 lieutenant
             return "\x1b[2;35;" + str(bg) + "m" + "o" + "\x1b[0m"
-        elif item == 3: # t2 lieutenant
+        elif item == 3:  # t2 lieutenant
             return "\x1b[2;36;" + str(bg) + "m" + "o" + "\x1b[0m"
-        elif item == 4: # t1 commander
+        elif item == 4:  # t1 commander
             return "\x1b[1;33;" + str(bg) + "m" + "@" + "\x1b[0m"
-        elif item == 5: # t2 commander
+        elif item == 5:  # t2 commander
             return "\x1b[1;32;" + str(bg) + "m" + "@" + "\x1b[0m"
-        elif item == 10: # t1 soldier
+        elif item == 10:  # t1 soldier
             return "\x1b[1;33;" + str(bg) + "m" + "+" + "\x1b[0m"
-        elif item == 11: # t1 mage
+        elif item == 11:  # t1 mage
             return "\x1b[1;33;" + str(bg) + "m" + "x" + "\x1b[0m"
-        elif item == 12: # t1 healer
+        elif item == 12:  # t1 healer
             return "\x1b[1;33;" + str(bg) + "m" + "#" + "\x1b[0m"
-        elif item == 20: # t2 soldier
+        elif item == 20:  # t2 soldier
             return "\x1b[1;32;" + str(bg) + "m" + "+" + "\x1b[0m"
-        elif item == 21: # t2 mage
+        elif item == 21:  # t2 mage
             return "\x1b[1;32;" + str(bg) + "m" + "x" + "\x1b[0m"
-        elif item == 22: # t2 healer
+        elif item == 22:  # t2 healer
             return "\x1b[1;32;" + str(bg) + "m" + "#" + "\x1b[0m"
         else:
             return "\x1b[1;32;40m" + " " + "\x1b[0m"
@@ -561,4 +563,3 @@ class game_space:
                 printable += self.get_printable(item, hit, healed)
             printable += "\n"
         return printable
-

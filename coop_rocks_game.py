@@ -1,6 +1,8 @@
-import random, sys
-import numpy as np
+import random
 from collections import deque
+
+import numpy as np
+
 
 class Agent:
     def __init__(self, index, agent_type, xpos, ypos, state):
@@ -43,6 +45,7 @@ class Agent:
     def drop_rock(self):
         self.has_rock = 0
 
+
 class game_space:
     def __init__(self, width, height, num_agents, walls,
                  split_layers=False, flatten_state=False,
@@ -60,15 +63,15 @@ class game_space:
         self.num_initial_rock_piles = max(min_rocks, self.cells * 0.015)
         self.num_holes = max(min_holes, self.cells * 0.006)
         self.num_imps = max(min_imps, self.cells * 0.0001)
-        self.num_miners = int(self.num_agents/3)
-        self.num_collectors = int(self.num_agents/3)
+        self.num_miners = int(self.num_agents / 3)
+        self.num_collectors = int(self.num_agents / 3)
         self.num_defenders = self.num_agents - self.num_miners - self.num_collectors
         if self.with_imps == False:
             self.num_imps = 0
-            self.num_miners = int(self.num_agents/2)
+            self.num_miners = int(self.num_agents / 2)
             self.num_collectors = self.num_agents - self.num_miners
             self.num_defenders = 0
-        self.num_actions = 5 # up, down, left, right, drop
+        self.num_actions = 5  # up, down, left, right, drop
         self.moves = ["l", "r", "u", "d", "o"]
         self.walls = walls
         self.reset()
@@ -152,8 +155,8 @@ class game_space:
         agent_index = 0
         state_size = self.get_state_size()
         while agent_index < self.num_agents:
-            xpos = random.randint(pad, self.width-(pad*2))
-            ypos = random.randint(pad, self.height-(pad*2))
+            xpos = random.randint(pad, self.width - (pad * 2))
+            ypos = random.randint(pad, self.height - (pad * 2))
             if self.game_space[ypos][xpos] != 0:
                 continue
             overlapped = self.check_for_overlap(xpos, ypos)
@@ -176,11 +179,11 @@ class game_space:
         for n in range(self.width):
             for m in range(self.visible):
                 space[m][n] = 1
-                space[self.height-(m+1)][n] = 1
+                space[self.height - (m + 1)][n] = 1
         for n in range(self.height):
             for m in range(self.visible):
                 space[n][m] = 1
-                space[n][self.width-(m+1)] = 1
+                space[n][self.width - (m + 1)] = 1
         return space
 
     def find_random_empty_cell(self, space):
@@ -189,8 +192,8 @@ class game_space:
         empty = False
         pad = self.visible
         while empty == False:
-            xpos = random.randint(pad, self.width-(pad*2))
-            ypos = random.randint(pad, self.height-(pad*2))
+            xpos = random.randint(pad, self.width - (pad * 2))
+            ypos = random.randint(pad, self.height - (pad * 2))
             if space[ypos][xpos] == 0:
                 empty = True
                 break
@@ -203,15 +206,15 @@ class game_space:
             xpos, ypos = self.find_random_empty_cell(space)
             space[ypos][xpos] = 1
             for n in range(50):
-                move = random.randint(0,3)
+                move = random.randint(0, 3)
                 if move == 0:
-                    xpos = max(0, xpos-1)
+                    xpos = max(0, xpos - 1)
                 elif move == 1:
-                    xpos = min(self.width-1, xpos+1)
+                    xpos = min(self.width - 1, xpos + 1)
                 elif move == 2:
-                    ypos = max(0, ypos-1)
+                    ypos = max(0, ypos - 1)
                 elif move == 3:
-                    ypos = min(self.height-1, ypos+1)
+                    ypos = min(self.height - 1, ypos + 1)
                 if space[ypos][xpos] == 0:
                     added += 1
                 space[ypos][xpos] = 1
@@ -231,16 +234,16 @@ class game_space:
 
     def get_visible(self, ypos, xpos):
         lpad = self.visible
-        rpad = self.visible+1
-        left = xpos-lpad
-        right = xpos+rpad
-        top = ypos-lpad
-        bottom = ypos+rpad
+        rpad = self.visible + 1
+        left = xpos - lpad
+        right = xpos + rpad
+        top = ypos - lpad
+        bottom = ypos + rpad
         visible = np.array(self.game_space[left:right, top:bottom], dtype=int)
         return visible
 
     def get_state_size(self):
-        state_size = ((self.visible*2)+1)*((self.visible*2)+1)
+        state_size = ((self.visible * 2) + 1) * ((self.visible * 2) + 1)
         if self.split_layers == True:
             return 5 * state_size
         return state_size
@@ -279,7 +282,7 @@ class game_space:
             if x == xpos and y == ypos:
                 n -= 1
                 if n < 1:
-                    del(self.rock_piles[index])
+                    del (self.rock_piles[index])
                 else:
                     self.rock_piles[index] = [x, y, n]
 
@@ -293,24 +296,24 @@ class game_space:
         last_direction = self.agents[index].last_direction
         droppedx = xpos
         droppedy = ypos
-        if last_direction == 0: #left
-            droppedx = droppedx-1
+        if last_direction == 0:  # left
+            droppedx = droppedx - 1
             if droppedx < 1:
                 return False
-        elif last_direction == 1: #right
-            droppedx = droppedx+1
-            if droppedx > self.width-1:
+        elif last_direction == 1:  # right
+            droppedx = droppedx + 1
+            if droppedx > self.width - 1:
                 return False
-        elif last_direction == 2: #up
-            droppedy = droppedy-1
+        elif last_direction == 2:  # up
+            droppedy = droppedy - 1
             if droppedy < 1:
                 return False
-        elif last_direction == 3: #down
-            droppedy = droppedy+1
-            if droppedy > self.height-1:
+        elif last_direction == 3:  # down
+            droppedy = droppedy + 1
+            if droppedy > self.height - 1:
                 return False
         item = self.game_space[droppedy][droppedx]
-        if item == 0: # empty space
+        if item == 0:  # empty space
             self.rock_piles.append([droppedx, droppedy, 1])
             return True
         return False
@@ -323,14 +326,14 @@ class game_space:
             move = random.randint(0, 3)
             newx = x
             newy = y
-            if move == 0: # left
-                newx = max(0, x-1)
-            elif move == 1: # right
-                newx = min(self.width-1, x+1)
-            elif move == 2: # up
-                newy = max(0, y-1)
-            elif move == 3: # down
-                newy = min(self.height-1, y+1)
+            if move == 0:  # left
+                newx = max(0, x - 1)
+            elif move == 1:  # right
+                newx = min(self.width - 1, x + 1)
+            elif move == 2:  # up
+                newy = max(0, y - 1)
+            elif move == 3:  # down
+                newy = min(self.height - 1, y + 1)
             moved = False
             if self.game_space[newy][newx] == 0:
                 moved = True
@@ -338,7 +341,7 @@ class game_space:
             elif self.game_space[newy][newx] == 2:
                 rock_pile_index = self.get_rock_pile_at_pos(newx, newy)
                 if rock_pile_index is not None:
-                    del(self.rock_piles[rock_pile_index])
+                    del (self.rock_piles[rock_pile_index])
                 moved = True
             if moved == True:
                 self.imps[index] = [newx, newy]
@@ -363,14 +366,14 @@ class game_space:
         agent_type = self.agents[index].agent_type
         newx = x
         newy = y
-        if move == 0: # left
-            newx = max(0, x-1)
-        elif move == 1: # right
-            newx = min(self.width-1, x+1)
-        elif move == 2: # up
-            newy = max(0, y-1)
-        elif move == 3: # down
-            newy = min(self.height-1, y+1)
+        if move == 0:  # left
+            newx = max(0, x - 1)
+        elif move == 1:  # right
+            newx = min(self.width - 1, x + 1)
+        elif move == 2:  # up
+            newy = max(0, y - 1)
+        elif move == 3:  # down
+            newy = min(self.height - 1, y + 1)
         elif move == 4:
             # Miners can drop the rocks they've mined onto empty cells
             dropped = self.drop_rock(index)
@@ -463,4 +466,3 @@ class game_space:
                 printable += self.get_printable(item)
             printable += "\n"
         return printable
-
