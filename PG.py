@@ -39,7 +39,7 @@ class Policy(nn.Module):
 
     def get_action(self, state, hidden):
         probs, h = self.forward(state, hidden)
-        highest_prob_action = np.random.choice(self.num_actions, p=np.squeeze(probs.detach().numpy()))
+        highest_prob_action = np.random.choice(self.num_actions, p=np.squeeze(probs.detach().cpu().numpy()))
         log_prob = torch.log(probs.squeeze(0)[highest_prob_action])
         return highest_prob_action, log_prob, h
 
@@ -52,30 +52,31 @@ class Policy(nn.Module):
 class PG_model:
     def __init__(self, state_size, num_actions, num_frames):
         self.policy = Policy(state_size, num_actions, num_frames)
+        self.policy#.to("cuda:0")
         self.optimizer = optim.Adam(self.policy.parameters(), lr=3e-4)
         self.reset()
 
     def update_policy(self):
         discounted_rewards = []
 
-        # print(" Num rewards: " + str(len(self.rewards)))
         for t in range(len(self.rewards)):
-            Gt = 0
-            pw = 0
-            for r in self.rewards[t:]:
-                Gt = Gt + GAMMA ** pw * r
-                pw = pw + 1
-            discounted_rewards.append(Gt)
+            gt = sum(r * GAMMA ** p for p, r in enumerate(self.rewards[t:]))
+            discounted_rewards.append(gt)
+        # print(self.rewards)
+        # print(discounted_rewards)
 
-        discounted_rewards = torch.tensor(discounted_rewards)
+        discounted_rewards = torch.tensor(discounted_rewards)#.to("cuda:0")
         discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9)
 
         policy_gradient = []
         for log_prob, Gt in zip(self.log_probs, discounted_rewards):
             policy_gradient.append(-log_prob * Gt)
 
+        # policy_gradient = [self.log_probs[-1] * sum(self.rewards)]  # Only use final reward
+
         self.optimizer.zero_grad()
-        policy_gradient = torch.stack(policy_gradient).sum()
+        policy_gradient = torch.stack(policy_gradient)#.to("cuda:0")
+        policy_gradient = policy_gradient.sum()
         policy_gradient.backward()
         self.optimizer.step()
         self.reset()
@@ -92,9 +93,7 @@ class PG_model:
         self.policy_hidden = self.policy.init_hidden()
 
     def get_action(self, state):
-        hidden = self.policy_hidden
-        action, log_prob, hidden = self.policy.get_action(state, hidden)
-        self.policy_hidden = hidden
+        action, log_prob, self.policy_hidden = self.policy.get_action(state, self.policy_hidden)
         self.log_probs.append(log_prob)
         return action
 
@@ -112,6 +111,6 @@ class PG_model:
         if os.path.exists(filename):
             checkpoint = torch.load(filename)
             self.policy.load_state_dict(checkpoint['policy_state_dict'])
-            self.policy_hidden = checkpoint["policy_hidden"]
+            self.policy_hidden = checkpoint["policy_hidden"]#.to("cuda:0")
             return True
         return False

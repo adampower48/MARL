@@ -76,7 +76,7 @@ def pretty_vecs(vecs):
 
 
 def get_state(gs, index, model_type):
-    state = torch.FloatTensor(gs.get_agent_state(index))
+    state = torch.FloatTensor(gs.get_agent_state(index))#.to("cuda:0")
     if model_type not in sac_models:
         state = state.unsqueeze(0)
     return state
