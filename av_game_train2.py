@@ -1,4 +1,3 @@
-import json
 import os
 import random
 import re
@@ -7,23 +6,7 @@ from collections import deque
 import numpy as np
 
 from av_game import game_space
-from misc import get_state_params, get_model, get_state, train_after_episode, sac_models
-
-
-def one_hot(idx, size, dtype=None):
-    x = np.zeros(size, dtype=dtype)
-    x[idx] = 1
-    return x
-
-
-def load_json(filename):
-    with open(filename) as f:
-        return json.load(f)
-
-
-def write_json(js, filename):
-    with open(filename, "w") as f:
-        json.dump(js, f, indent=2)
+from misc import get_state_params, get_model, get_state, train_after_episode, sac_models, one_hot, load_json, write_json
 
 
 def get_trained_models(models_folder):
@@ -261,7 +244,7 @@ if __name__ == '__main__':
     # CONSTANTS
     UNIT_VISIBILITY = 4
     MAX_EPISODES = 500
-    MAX_ITERS = 1024
+    MAX_ITERS = 100
     EPSILON_DECAY = 0.00001
     EPSILON_MIN = 0
     MODEL_TYPE = "PG"

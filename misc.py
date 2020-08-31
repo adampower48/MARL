@@ -1,3 +1,7 @@
+import json
+
+import numpy as np
+
 from AA import *
 from DQN import *
 from DRQN import *
@@ -76,7 +80,7 @@ def pretty_vecs(vecs):
 
 
 def get_state(gs, index, model_type):
-    state = torch.FloatTensor(gs.get_agent_state(index))#.to("cuda:0")
+    state = torch.FloatTensor(gs.get_agent_state(index))  # .to("cuda:0")
     if model_type not in sac_models:
         state = state.unsqueeze(0)
     return state
@@ -117,3 +121,19 @@ def get_model(model_type, gs):
         model = PG_model(state_size, num_actions, num_frames)
 
     return model
+
+
+def one_hot(idx, size, dtype=None):
+    x = np.zeros(size, dtype=dtype)
+    x[idx] = 1
+    return x
+
+
+def load_json(filename):
+    with open(filename) as f:
+        return json.load(f)
+
+
+def write_json(js, filename):
+    with open(filename, "w") as f:
+        json.dump(js, f, indent=2)
