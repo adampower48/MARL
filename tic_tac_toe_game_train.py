@@ -4,7 +4,7 @@ from torch.nn.functional import one_hot
 from torch.nn.modules.loss import MSELoss
 from torch.optim import Adam
 
-from CNN import SimpleCNN
+from CNN import SimpleCNN, RandomCNN
 from tic_tac_toe_game import TicTackToeGame
 
 
@@ -21,10 +21,12 @@ def cnn_output_to_grid(output):
     return output[0].detach().numpy()
 
 
-def get_action(game: TicTackToeGame, player_model, player_idx, random_chance=0):
+def get_action(game: TicTackToeGame, player_model, player_idx, random_chance: float = 0):
     if np.random.rand() < random_chance:
         # Random action
-        return np.zeros(game.get_action_space()[1][1]), np.random.choice(game.get_valid_actions(player_idx))
+        preds = np.zeros(game.get_action_space()[0][1])
+        action = np.random.choice(game.get_valid_actions(player_idx))
+        return preds, action
 
     # Get game state
     grid = game.get_state()
@@ -87,8 +89,8 @@ def train(player_model, player_idx, states, actions, is_winner):
 def main():
     # Set up game & players
     game = TicTackToeGame(GRID_SIZE, NUM_PLAYERS)
-    players = [SimpleCNN(NUM_PLAYERS + 1, filter_size=CNN_FILTER_SIZE) for _ in range(NUM_PLAYERS)]
-    # players = [RandomCNN(), SimpleCNN(NUM_PLAYERS + 1, filter_size=CNN_FILTER_SIZE)]
+    # players = [SimpleCNN(NUM_PLAYERS + 1, filter_size=CNN_FILTER_SIZE) for _ in range(NUM_PLAYERS)]
+    players = [RandomCNN(), SimpleCNN(NUM_PLAYERS + 1, filter_size=CNN_FILTER_SIZE)]
 
     winners = []
     for i in range(NUM_GAMES):
@@ -105,7 +107,7 @@ def main():
 
             # Get & perform action
             game_states.append(game.get_state().copy())
-            preds, action = get_action(game, players[cur_player], cur_player)
+            preds, action = get_action(game, players[cur_player], cur_player, random_chance=RANDOM_CHANCE)
             game.perform_action(cur_player, action)
             predicted_actions.append(action)
 
