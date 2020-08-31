@@ -6,7 +6,8 @@ from collections import deque
 import numpy as np
 
 from av_game import game_space
-from misc import get_state_params, get_model, get_state, train_after_episode, sac_models, one_hot, load_json, write_json
+from misc import get_state_params, get_model, get_state, train_after_episode, sac_models
+from helpers import one_hot, load_json, write_json
 
 
 def get_trained_models(models_folder):
